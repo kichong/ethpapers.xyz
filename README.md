@@ -1,1 +1,4 @@
-edit src/LINK_MAP.json
+edit 
+
+src/App.jsx 
+const LINK_MAP = {
