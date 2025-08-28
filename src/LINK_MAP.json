@@ -22,7 +22,8 @@
   "cross": {
     "title": "Author",
     "items": [
-      { "label": "Ki Chong Tran", "href": "https://kichong.xyz" }
+      { "label": "kichong.xyz", "href": "https://kichong.xyz" },
+      { "label": "Email", "href": "mailto:kichong@ethpapers.xyz" }
     ]
   }
 }
