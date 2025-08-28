@@ -25,8 +25,11 @@ const LINK_MAP = {
     ],
   },
   cross: {
-    title: "Author",
-    items: [{ label: "Ki Chong Tran", href: "https://kichong.xyz" }],
+    title: "Ki Chong Tran",
+    items: [
+      { label: "kichong.xyz", href: "https://kichong.xyz" },
+      { "label": "Email", "href": "mailto:kichong@ethpapers.xyz" },
+    ],
   },
 };
 
