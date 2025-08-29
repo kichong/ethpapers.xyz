@@ -215,6 +215,12 @@ const ControllerNode = ({ shape, items, sections, anchor, title, active, setActi
     bottom: "bottom-[calc(100%+16px)] left-1/2 -translate-x-1/2",
   }[anchor];
 
+  // On small screens we want menus to appear centered at the bottom
+  // of the viewport so they remain fully visible.
+  const wrapperPos = isMobile
+    ? "fixed bottom-4 left-1/2 -translate-x-1/2"
+    : `absolute ${panelPos}`;
+
   const handlers = isMobile
     ? {
         onClick: (e) => {
@@ -242,7 +248,7 @@ const ControllerNode = ({ shape, items, sections, anchor, title, active, setActi
 
       <AnimatePresence>
         {open && (
-          <div className={`absolute ${panelPos} pointer-events-none`}>
+          <div className={`${wrapperPos} pointer-events-none`}>
             <Panel items={items} sections={sections} mobile={isMobile} title={title} />
           </div>
         )}
