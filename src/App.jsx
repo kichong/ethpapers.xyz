@@ -1,43 +1,10 @@
 import React from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion as Motion, AnimatePresence } from "framer-motion";
+import LINK_MAP from "./LINK_MAP.js";
 
-// Inline data so the canvas runs standalone
-const LINK_MAP = {
-  triangle: {
-    title: "NFTs",
-    items: [{ label: "Mirror.xyz", href: "https://mirror.xyz/ethpapers.eth" }],
-  },
-  square: {
-    title: "Books",
-    items: [
-      { label: "IngramSpark", href: "https://ingram.ethpapers.xyz" },
-      { label: "Amazon", href: "https://amazon.ethpapers.xyz" },
-      { label: "Indie California", href: "https://library.ethpapers.xyz" },
-    ],
-  },
-  circle: {
-    title: "GPTs",
-    items: [
-      {
-        label: "EthereumGPT",
-        href: "https://chatgpt.com/g/g-k4yMyMJW0-ethereumgpt?model=gpt-5",
-      },
-    ],
-  },
-  cross: {
-    title: "Ki Chong Tran",
-    items: [
-      { label: "kichong.xyz", href: "https://kichong.xyz" },
-      { "label": "Email", "href": "mailto:kichong@ethpapers.xyz" },
-    ],
-  },
-};
+const GLOW = "rgba(140,255,200,0.9)";
 
-// Dirty gold palette: darker, minimal glow
-const GOLD_HEX = "#D4AF37";
-const GOLD_MUTED = "rgba(212,175,55,0.55)";
-const GLOW = "rgba(212,175,55,0.25)";
-
+// Fallback titles if JSON omits them
 const DEFAULT_TITLES = {
   triangle: "NFTs",
   square: "Books",
@@ -45,30 +12,23 @@ const DEFAULT_TITLES = {
   cross: "Author",
 };
 
-// ---------- Error Boundary ----------
+// Minimal error boundary so runtime errors don't blank the page
 class ErrorBoundary extends React.Component {
   constructor(props) {
     super(props);
     this.state = { error: null };
   }
-  static getDerivedStateFromError(error) {
-    return { error };
-  }
-  componentDidCatch(error, info) {
-    console.error("UI crash:", error, info);
-  }
+  static getDerivedStateFromError(error) { return { error }; }
+  componentDidCatch(error, info) { console.error("UI crash:", error, info); }
   render() {
     if (this.state.error) {
       return (
-        <div className="min-h-screen bg-black text-yellow-200 p-6 font-mono">
+        <div className="min-h-screen bg-black text-red-200 p-6 font-mono">
           <h2 className="text-lg mb-2">Something went wrong.</h2>
           <pre className="text-xs whitespace-pre-wrap opacity-80">
             {String(this.state.error?.message || this.state.error)}
           </pre>
-          <button
-            className="mt-4 underline"
-            onClick={() => this.setState({ error: null })}
-          >
+          <button className="mt-4 underline" onClick={() => this.setState({ error: null })}>
             Try again
           </button>
         </div>
@@ -78,7 +38,6 @@ class ErrorBoundary extends React.Component {
   }
 }
 
-// ---------- Utilities ----------
 function useIsMobile() {
   const [m, setM] = React.useState(false);
   React.useEffect(() => {
@@ -91,72 +50,102 @@ function useIsMobile() {
   return m;
 }
 
-// Pure helper to make LINK_MAP testable
-export function getGroupFrom(map, key) {
-  const data = map[key];
+// Accepts either Schema A: { title, items: [...] } or Schema B: { title, sections: [{ subtitle, items: [...] }, ...] }
+function getGroup(key) {
+  const data = LINK_MAP[key];
   if (Array.isArray(data)) {
     return { title: DEFAULT_TITLES[key], items: data };
+  }
+  if (data && Array.isArray(data.sections)) {
+    return { title: data.title || DEFAULT_TITLES[key], sections: data.sections };
   }
   if (data && Array.isArray(data.items)) {
     return { title: data.title || DEFAULT_TITLES[key], items: data.items };
   }
-  console.warn(
-    `[LINK_MAP] ${key} has invalid shape; expected array or {title, items:[...]}.`,
-    data
-  );
+  console.warn(`[LINK_MAP] ${key} has invalid shape; expected array or {title, items:[...] or sections:[...]}.`, data);
   return { title: (data && data.title) || DEFAULT_TITLES[key], items: [] };
 }
 
-function getGroup(key) {
-  return getGroupFrom(LINK_MAP, key);
-}
-
-const Panel = ({ items, mobile, title }) => {
+const Panel = ({ items, sections, mobile, title }) => {
+  const hasSections = Array.isArray(sections);
   const safeItems = Array.isArray(items) ? items : [];
+  // Limit height so large menus stay within the viewport and enable scrolling
   return (
-    <motion.div
+    <Motion.div
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: 6 }}
       transition={{ type: "spring", stiffness: 320, damping: 28 }}
       className={
-        "pointer-events-auto rounded-xl bg-black/95 p-4 backdrop-blur-md border border-yellow-900/40 shadow-[0_0_6px_rgba(212,175,55,0.1)] " +
-        (mobile
-          ? "w-[min(26rem,calc(100vw-2rem))]"
-          : "w-[min(18rem,calc(100vw-3rem))]")
+        "pointer-events-auto rounded-2xl bg-black/85 p-4 backdrop-blur-md border border-emerald-300/30 shadow-[0_0_30px_rgba(140,255,200,0.25)] max-h-[calc(100vh-4rem)] overflow-y-auto " +
+        (mobile ? "w-[min(26rem,calc(100vw-2rem))]" : "w-[min(18rem,calc(100vw-3rem))]")
       }
       role="menu"
     >
       {title && (
-        <div className="mb-2 text-yellow-500/80 text-xs tracking-widest uppercase">
+        <div className="mb-2 text-emerald-200/90 text-xs tracking-widest uppercase">
           {title}
         </div>
       )}
-      <ul className="space-y-2">
-        {safeItems.map((it) => {
-          const external = /^https?:\/\//.test(it?.href || "");
-          return (
-            <li key={it?.label}>
-              <a
-                href={it?.href || "#"}
-                target={external ? "_blank" : undefined}
-                rel={external ? "noopener noreferrer" : undefined}
-                className="block rounded border border-yellow-900/30 bg-yellow-900/10 px-3 py-2 text-yellow-200/80 hover:bg-yellow-900/20 hover:text-yellow-100 transition"
-              >
-                {it?.label || "(untitled)"}
-              </a>
-            </li>
-          );
-        })}
-      </ul>
-    </motion.div>
+
+      {!hasSections && (
+        <ul className="space-y-2">
+          {safeItems.map((it) => {
+            const external = /^https?:\/\//.test(it?.href || "");
+            return (
+              <li key={it?.label}>
+                <a
+                  href={it?.href || "#"}
+                  target={external ? "_blank" : undefined}
+                  rel={external ? "noopener noreferrer" : undefined}
+                  className="block rounded-lg border border-emerald-400/10 bg-emerald-100/0 px-3 py-2 text-emerald-100/90 hover:bg-emerald-400/5 hover:text-emerald-100 transition"
+                >
+                  {it?.label || "(untitled)"}
+                </a>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+
+      {hasSections && (
+        <div className="space-y-4">
+          {sections.map((sec, idx) => (
+            <div key={idx}>
+              {!!(sec.subtitle && String(sec.subtitle).trim()) && (
+                <div className="mb-1 text-[11px] text-emerald-200/80">
+                  {sec.subtitle}
+                </div>
+              )}
+              <ul className="space-y-2">
+                {(sec.items || []).map((it) => {
+                  const external = /^https?:\/\//.test(it?.href || "");
+                  return (
+                    <li key={it?.label}>
+                      <a
+                        href={it?.href || "#"}
+                        target={external ? "_blank" : undefined}
+                        rel={external ? "noopener noreferrer" : undefined}
+                        className="block rounded-lg border border-emerald-400/10 bg-emerald-100/0 px-3 py-2 text-emerald-100/90 hover:bg-emerald-400/5 hover:text-emerald-100 transition"
+                      >
+                        {it?.label || "(untitled)"}
+                      </a>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          ))}
+        </div>
+      )}
+    </Motion.div>
   );
 };
 
 const Glow = ({ className }) => (
   <div
-    className={`absolute inset-0 blur-[1px] opacity-25 ${className || ""}`}
-    style={{ boxShadow: `0 0 10px 2px ${GLOW}, inset 0 0 6px ${GLOW}` }}
+    className={`absolute inset-0 blur-xl opacity-70 ${className || ""}`}
+    style={{ boxShadow: `0 0 60px 10px ${GLOW}, inset 0 0 40px ${GLOW}` }}
   />
 );
 
@@ -164,7 +153,13 @@ function ShapeTriangle() {
   return (
     <div className="relative w-32 h-32 md:w-40 md:h-40">
       <svg viewBox="0 0 100 100" className="w-full h-full">
-        <polygon points="50,10 90,80 10,80" fill="none" strokeWidth="3" stroke={GOLD_HEX} />
+        <polygon points="50,10 90,80 10,80" fill="none" strokeWidth="4" stroke="url(#grad)" />
+        <defs>
+          <linearGradient id="grad" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stopColor={GLOW} />
+            <stop offset="100%" stopColor="white" />
+          </linearGradient>
+        </defs>
       </svg>
       <Glow />
     </div>
@@ -175,7 +170,7 @@ function ShapeSquare() {
   return (
     <div className="relative w-32 h-32 md:w-40 md:h-40">
       <svg viewBox="0 0 100 100" className="w-full h-full">
-        <rect x="10" y="10" width="80" height="80" fill="none" strokeWidth="3" stroke={GOLD_HEX} />
+        <rect x="10" y="10" width="80" height="80" fill="none" strokeWidth="4" stroke={GLOW} />
       </svg>
       <Glow />
     </div>
@@ -186,7 +181,7 @@ function ShapeCircle() {
   return (
     <div className="relative w-32 h-32 md:w-40 md:h-40">
       <svg viewBox="0 0 100 100" className="w-full h-full">
-        <circle cx="50" cy="50" r="40" fill="none" strokeWidth="3" stroke={GOLD_HEX} />
+        <circle cx="50" cy="50" r="40" fill="none" strokeWidth="4" stroke={GLOW} />
       </svg>
       <Glow />
     </div>
@@ -200,8 +195,8 @@ function ShapeCross() {
         <path
           d="M20 38 L38 20 L50 32 L62 20 L80 38 L68 50 L80 62 L62 80 L50 68 L38 80 L20 62 L32 50 Z"
           fill="none"
-          strokeWidth="3"
-          stroke={GOLD_HEX}
+          strokeWidth="4"
+          stroke={GLOW}
         />
       </svg>
       <Glow />
@@ -209,9 +204,9 @@ function ShapeCross() {
   );
 }
 
-const ControllerNode = ({ shape, items, anchor, title }) => {
-  const [open, setOpen] = React.useState(false);
+const ControllerNode = ({ shape, items, sections, anchor, title, active, setActive }) => {
   const isMobile = useIsMobile();
+  const open = active === shape;
 
   const ShapeComp = {
     triangle: ShapeTriangle,
@@ -227,17 +222,22 @@ const ControllerNode = ({ shape, items, anchor, title }) => {
     bottom: "bottom-[calc(100%+16px)] left-1/2 -translate-x-1/2",
   }[anchor];
 
-  const mobilePos = "fixed left-1/2 -translate-x-1/2 bottom-20 z-50";
-
-  const openOn = {
-    onMouseEnter: () => !isMobile && setOpen(true),
-    onMouseLeave: () => !isMobile && setOpen(false),
-    onClick: () => isMobile && setOpen((v) => !v),
-  };
+  const handlers = isMobile
+    ? {
+        onClick: (e) => {
+          e.stopPropagation();
+          setActive(open ? null : shape);
+        },
+      }
+    : {
+        onMouseEnter: () => setActive(shape),
+        onMouseLeave: () => setActive(null),
+        onClick: (e) => e.stopPropagation(),
+      };
 
   return (
-    <div className="group relative flex flex-col items-center justify-center" {...openOn}>
-      <motion.div
+    <div className="group relative flex flex-col items-center justify-center" {...handlers}>
+      <Motion.div
         whileHover={{ scale: 1.06 }}
         whileTap={{ scale: 0.98 }}
         className="cursor-pointer select-none"
@@ -245,12 +245,12 @@ const ControllerNode = ({ shape, items, anchor, title }) => {
         aria-expanded={open}
       >
         <ShapeComp />
-      </motion.div>
+      </Motion.div>
 
       <AnimatePresence>
         {open && (
-          <div className={(isMobile ? mobilePos : `absolute ${panelPos}`) + " pointer-events-none"}>
-            <Panel items={items} mobile={isMobile} title={title} />
+          <div className={`absolute ${panelPos} pointer-events-none`}>
+            <Panel items={items} sections={sections} mobile={isMobile} title={title} />
           </div>
         )}
       </AnimatePresence>
@@ -259,23 +259,33 @@ const ControllerNode = ({ shape, items, anchor, title }) => {
 };
 
 export default function App() {
+  const [active, setActive] = React.useState(null);
   const TRI = getGroup("triangle");
   const SQU = getGroup("square");
   const CIR = getGroup("circle");
   const CRO = getGroup("cross");
 
+  React.useEffect(() => {
+    const close = () => setActive(null);
+    window.addEventListener("resize", close);
+    return () => window.removeEventListener("resize", close);
+  }, []);
+
   return (
     <ErrorBoundary>
-      <main className="relative min-h-screen text-yellow-200 bg-black overflow-hidden">
-        <div className="pointer-events-none absolute inset-0">
-          <DistressedBackdrop />
+      <main
+        className="relative min-h-screen text-emerald-100 bg-black overflow-hidden"
+        onClick={() => setActive(null)}
+      >
+        <div className="pointer-events-none absolute inset-0 opacity-30">
+          <GridDecor />
         </div>
 
         <header className="relative z-10 flex items-center justify-between px-4 md:px-6 pt-6">
-          <h1 className="font-mono tracking-wider text-xs md:text-sm text-yellow-600/70">
+          <h1 className="font-mono tracking-wider text-xs md:text-sm text-emerald-200/70">
             ETHPAPERS.XYZ
           </h1>
-          <div className="text-[10px] font-mono text-yellow-600/60">v0.1</div>
+          <div className="text-[10px] font-mono text-emerald-400/60">v0.1</div>
         </header>
 
         <section className="relative z-10 grid place-items-center pt-6 md:pt-10">
@@ -283,94 +293,89 @@ export default function App() {
             <div className="absolute inset-0 grid grid-cols-3 grid-rows-3">
               <div />
               <div className="flex items-center justify-center">
-                <ControllerNode shape="triangle" items={TRI.items} anchor="top" title={TRI.title} />
+                <ControllerNode
+                  shape="triangle"
+                  items={TRI.items}
+                  sections={TRI.sections}
+                  anchor="top"
+                  title={TRI.title}
+                  active={active}
+                  setActive={setActive}
+                />
               </div>
               <div />
               <div className="flex items-center justify-center">
-                <ControllerNode shape="square" items={SQU.items} anchor="left" title={SQU.title} />
+                <ControllerNode
+                  shape="square"
+                  items={SQU.items}
+                  sections={SQU.sections}
+                  anchor="left"
+                  title={SQU.title}
+                  active={active}
+                  setActive={setActive}
+                />
               </div>
               <div />
               <div className="flex items-center justify-center">
-                <ControllerNode shape="circle" items={CIR.items} anchor="right" title={CIR.title} />
+                <ControllerNode
+                  shape="circle"
+                  items={CIR.items}
+                  sections={CIR.sections}
+                  anchor="right"
+                  title={CIR.title}
+                  active={active}
+                  setActive={setActive}
+                />
               </div>
               <div />
               <div className="flex items-center justify-center">
-                <ControllerNode shape="cross" items={CRO.items} anchor="bottom" title={CRO.title} />
+                <ControllerNode
+                  shape="cross"
+                  items={CRO.items}
+                  sections={CRO.sections}
+                  anchor="bottom"
+                  title={CRO.title}
+                  active={active}
+                  setActive={setActive}
+                />
               </div>
               <div />
             </div>
           </div>
         </section>
+
+        <div className="pointer-events-none absolute inset-0 mix-blend-screen opacity-25">
+          <Scanlines />
+        </div>
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,transparent,rgba(0,0,0,0.7))]" />
+
+        <footer className="relative z-10 px-4 md:px-6 py-10 text-xs text-emerald-300/40 font-mono">
+          Hover or tap a shape to reveal links.
+        </footer>
       </main>
     </ErrorBoundary>
   );
 }
 
-// ---------- Backgrounds ----------
-const DistressedBackdrop = () => (
+const GridDecor = () => (
+  <svg className="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
+    <rect x="1" y="1" width="98" height="98" fill="none" stroke="rgba(140,255,200,0.6)" strokeWidth="0.6" />
+    {[25, 50, 75].map((p) => (
+      <g key={p}>
+        <line x1={p} y1="1" x2={p} y2="99" stroke="rgba(140,255,200,0.2)" strokeWidth="0.4" />
+        <line x1="1" y1={p} x2="99" y2={p} stroke="rgba(140,255,200,0.2)" strokeWidth="0.4" />
+      </g>
+    ))}
+  </svg>
+);
+
+const Scanlines = () => (
   <div
     className="absolute inset-0"
     style={{
-      backgroundImage: [
-        "radial-gradient(circle at center, rgba(0,0,0,0.6), rgba(0,0,0,0.98))",
-        "repeating-conic-gradient(from 0deg, rgba(212,175,55,0.02) 0 12deg, transparent 12deg 24deg)",
-        "radial-gradient(circle at 25% 35%, rgba(212,175,55,0.04), transparent 45%)",
-        "radial-gradient(circle at 70% 75%, rgba(212,175,55,0.03), transparent 50%)",
-      ].join(", "),
-      backgroundBlendMode: "overlay, multiply, normal, normal",
-      filter: "contrast(110%) brightness(85%)",
+      backgroundImage:
+        "repeating-linear-gradient(0deg, rgba(140,255,200,0.12) 0px, rgba(140,255,200,0.12) 1px, rgba(0,0,0,0) 2px)",
+      animation: "scan 8s linear infinite",
     }}
-  >
-    <GrainOverlay />
-  </div>
+  />
 );
-
-const GrainOverlay = () => (
-  <div className="absolute inset-0 mix-blend-overlay pointer-events-none opacity-50">
-    <svg className="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
-      <filter id="noiseFilter">
-        <feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="3" stitchTiles="stitch" />
-        <feColorMatrix type="saturate" values="0" />
-        <feComponentTransfer>
-          <feFuncA type="table" tableValues="0 0.5" />
-        </feComponentTransfer>
-      </filter>
-      <rect width="100%" height="100%" filter="url(#noiseFilter)" />
-    </svg>
-  </div>
-);
-
-// ---------- Lightweight tests ----------
-function runTests() {
-  try {
-    const tMap = {
-      triangle: [{ label: "A", href: "#" }],
-      circle: { title: "C", items: [{ label: "B", href: "http://x" }] },
-      bad: { title: "Bad", items: null },
-      empty: {},
-    };
-
-    const a = getGroupFrom(tMap, "triangle");
-    console.assert(a.title === DEFAULT_TITLES.triangle, "array form uses default title");
-    console.assert(Array.isArray(a.items) && a.items.length === 1, "array form items ok");
-
-    const c = getGroupFrom(tMap, "circle");
-    console.assert(c.title === "C", "object form keeps title");
-    console.assert(/https?:/.test(c.items[0].href), "external link stays intact");
-
-    const b = getGroupFrom(tMap, "bad");
-    console.assert(Array.isArray(b.items) && b.items.length === 0, "invalid items become empty array");
-
-    const m = getGroupFrom(tMap, "missing");
-    console.assert(Array.isArray(m.items) && m.items.length === 0, "missing key returns empty items");
-
-    const e = getGroupFrom(tMap, "empty");
-    console.assert(Array.isArray(e.items) && e.items.length === 0, "empty object yields empty items");
-
-    console.log("UI tests passed.");
-  } catch (e) {
-    console.error("UI tests failed:", e);
-  }
-}
-
-if (typeof window !== "undefined") runTests();
