@@ -1,29 +1,24 @@
 import React from "react";
 import { motion as Motion, AnimatePresence } from "framer-motion";
-import LINK_MAP from "./LINK_MAP.js";
+import LINK_MAP from "./LINK_MAP"; // keep this separate
 
-const GLOW = "rgba(140,255,200,0.9)";
+// Gold palette
+const GOLD = "#f1c453";       // highlight
+const GOLD_MID = "#e0b041";   // midtone
+const GOLD_DEEP = "#8d6b1a";  // shadow
 
+// Fallback titles if JSON omits them
+const DEFAULT_TITLES = { triangle: "NFTs", square: "Books", circle: "GPTs", cross: "Author" };
 
-// Minimal error boundary so runtime errors don't blank the page
 class ErrorBoundary extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = { error: null };
-  }
-  static getDerivedStateFromError(error) { return { error }; }
-  componentDidCatch(error, info) { console.error("UI crash:", error, info); }
-  render() {
-    if (this.state.error) {
+  constructor(p){ super(p); this.state = { error: null }; }
+  static getDerivedStateFromError(error){ return { error }; }
+  render(){
+    if(this.state.error){
       return (
-        <div className="min-h-screen bg-black text-red-200 p-6 font-mono">
-          <h2 className="text-lg mb-2">Something went wrong.</h2>
-          <pre className="text-xs whitespace-pre-wrap opacity-80">
-            {String(this.state.error?.message || this.state.error)}
-          </pre>
-          <button className="mt-4 underline" onClick={() => this.setState({ error: null })}>
-            Try again
-          </button>
+        <div className="min-h-screen bg-black text-amber-200 p-6 font-mono">
+          <h2 className="text-lg mb-2">Error</h2>
+          <pre className="text-xs whitespace-pre-wrap opacity-80">{String(this.state.error?.message || this.state.error)}</pre>
         </div>
       );
     }
@@ -31,38 +26,30 @@ class ErrorBoundary extends React.Component {
   }
 }
 
-function useIsMobile() {
-  const [m, setM] = React.useState(false);
-  React.useEffect(() => {
-    const mq = window.matchMedia("(max-width: 768px)");
-    const sync = () => setM(mq.matches);
+function useIsMobile(){
+  const [m,setM]=React.useState(false);
+  React.useEffect(()=>{
+    const mq=window.matchMedia("(max-width:768px)");
+    const sync=()=>setM(mq.matches);
     sync();
-    mq.addEventListener?.("change", sync);
-    return () => mq.removeEventListener?.("change", sync);
-  }, []);
+    mq.addEventListener?.("change",sync);
+    return ()=>mq.removeEventListener?.("change",sync);
+  },[]);
   return m;
 }
 
-// Accepts either Schema A: { title, items: [...] } or Schema B: { title, sections: [{ subtitle, items: [...] }, ...] }
-function getGroup(key) {
+// Accepts either Schema A: array, or Schema B: { title, items } or { title, sections }
+function getGroup(key){
   const data = LINK_MAP[key];
-  if (Array.isArray(data)) {
-    return { title: DEFAULT_TITLES[key], items: data };
-  }
-  if (data && Array.isArray(data.sections)) {
-    return { title: data.title || DEFAULT_TITLES[key], sections: data.sections };
-  }
-  if (data && Array.isArray(data.items)) {
-    return { title: data.title || DEFAULT_TITLES[key], items: data.items };
-  }
-  console.warn(`[LINK_MAP] ${key} has invalid shape; expected array or {title, items:[...] or sections:[...]}.`, data);
+  if(Array.isArray(data)) return { title: DEFAULT_TITLES[key], items: data };
+  if(data && Array.isArray(data.sections)) return { title: data.title || DEFAULT_TITLES[key], sections: data.sections };
+  if(data && Array.isArray(data.items)) return { title: data.title || DEFAULT_TITLES[key], items: data.items };
   return { title: (data && data.title) || DEFAULT_TITLES[key], items: [] };
 }
 
 const Panel = ({ items, sections, mobile, title }) => {
   const hasSections = Array.isArray(sections);
   const safeItems = Array.isArray(items) ? items : [];
-  // Limit height so large menus stay within the viewport and enable scrolling
   return (
     <Motion.div
       initial={{ opacity: 0, y: 8 }}
@@ -70,16 +57,12 @@ const Panel = ({ items, sections, mobile, title }) => {
       exit={{ opacity: 0, y: 6 }}
       transition={{ type: "spring", stiffness: 320, damping: 28 }}
       className={
-        "pointer-events-auto rounded-2xl bg-black/85 p-4 backdrop-blur-md border border-emerald-300/30 shadow-[0_0_30px_rgba(140,255,200,0.25)] max-h-[calc(100vh-4rem)] overflow-y-auto " +
+        "pointer-events-auto rounded-2xl bg-black/90 p-4 backdrop-blur-md border border-amber-300/20 shadow-[0_0_30px_rgba(240,200,80,0.25)] max-h-[calc(100vh-4rem)] overflow-y-auto " +
         (mobile ? "w-[min(26rem,calc(100vw-2rem))]" : "w-[min(18rem,calc(100vw-3rem))]")
       }
       role="menu"
     >
-      {title && (
-        <div className="mb-2 text-emerald-200/90 text-xs tracking-widest uppercase">
-          {title}
-        </div>
-      )}
+      {title && <div className="mb-2 text-amber-200/90 text-xs tracking-widest uppercase">{title}</div>}
 
       {!hasSections && (
         <ul className="space-y-2">
@@ -91,7 +74,7 @@ const Panel = ({ items, sections, mobile, title }) => {
                   href={it?.href || "#"}
                   target={external ? "_blank" : undefined}
                   rel={external ? "noopener noreferrer" : undefined}
-                  className="block rounded-lg border border-emerald-400/10 bg-emerald-100/0 px-3 py-2 text-emerald-100/90 hover:bg-emerald-400/5 hover:text-emerald-100 transition"
+                  className="block rounded-lg border border-amber-400/10 bg-amber-100/0 px-3 py-2 text-amber-100/90 hover:bg-amber-400/5 hover:text-amber-100 transition"
                 >
                   {it?.label || "(untitled)"}
                 </a>
@@ -106,9 +89,7 @@ const Panel = ({ items, sections, mobile, title }) => {
           {sections.map((sec, idx) => (
             <div key={idx}>
               {!!(sec.subtitle && String(sec.subtitle).trim()) && (
-                <div className="mb-1 text-[11px] text-emerald-200/80">
-                  {sec.subtitle}
-                </div>
+                <div className="mb-1 text-[11px] text-amber-200/80">{sec.subtitle}</div>
               )}
               <ul className="space-y-2">
                 {(sec.items || []).map((it) => {
@@ -119,7 +100,7 @@ const Panel = ({ items, sections, mobile, title }) => {
                         href={it?.href || "#"}
                         target={external ? "_blank" : undefined}
                         rel={external ? "noopener noreferrer" : undefined}
-                        className="block rounded-lg border border-emerald-400/10 bg-emerald-100/0 px-3 py-2 text-emerald-100/90 hover:bg-emerald-400/5 hover:text-emerald-100 transition"
+                        className="block rounded-lg border border-amber-400/10 bg-amber-100/0 px-3 py-2 text-amber-100/90 hover:bg-amber-400/5 hover:text-amber-100 transition"
                       >
                         {it?.label || "(untitled)"}
                       </a>
@@ -138,19 +119,19 @@ const Panel = ({ items, sections, mobile, title }) => {
 const Glow = ({ className }) => (
   <div
     className={`absolute inset-0 blur-xl opacity-70 ${className || ""}`}
-    style={{ boxShadow: `0 0 60px 10px ${GLOW}, inset 0 0 40px ${GLOW}` }}
+    style={{ boxShadow: `0 0 60px 10px ${GOLD}, inset 0 0 40px ${GOLD_MID}` }}
   />
 );
 
-function ShapeTriangle() {
+function ShapeTriangle(){
   return (
     <div className="relative w-32 h-32 md:w-40 md:h-40">
       <svg viewBox="0 0 100 100" className="w-full h-full">
-        <polygon points="50,10 90,80 10,80" fill="none" strokeWidth="4" stroke="url(#grad)" />
+        <polygon points="50,10 90,80 10,80" fill="none" strokeWidth="4" stroke="url(#gradTri)" />
         <defs>
-          <linearGradient id="grad" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stopColor={GLOW} />
-            <stop offset="100%" stopColor="white" />
+          <linearGradient id="gradTri" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stopColor={GOLD} />
+            <stop offset="100%" stopColor={GOLD_MID} />
           </linearGradient>
         </defs>
       </svg>
@@ -159,29 +140,29 @@ function ShapeTriangle() {
   );
 }
 
-function ShapeSquare() {
+function ShapeSquare(){
   return (
     <div className="relative w-32 h-32 md:w-40 md:h-40">
       <svg viewBox="0 0 100 100" className="w-full h-full">
-        <rect x="10" y="10" width="80" height="80" fill="none" strokeWidth="4" stroke={GLOW} />
+        <rect x="10" y="10" width="80" height="80" fill="none" strokeWidth="4" stroke={GOLD_MID} />
       </svg>
       <Glow />
     </div>
   );
 }
 
-function ShapeCircle() {
+function ShapeCircle(){
   return (
     <div className="relative w-32 h-32 md:w-40 md:h-40">
       <svg viewBox="0 0 100 100" className="w-full h-full">
-        <circle cx="50" cy="50" r="40" fill="none" strokeWidth="4" stroke={GLOW} />
+        <circle cx="50" cy="50" r="40" fill="none" strokeWidth="4" stroke={GOLD_MID} />
       </svg>
       <Glow />
     </div>
   );
 }
 
-function ShapeCross() {
+function ShapeCross(){
   return (
     <div className="relative w-44 h-44 md:w-52 md:h-52">
       <svg viewBox="0 0 100 100" className="w-full h-full">
@@ -189,7 +170,7 @@ function ShapeCross() {
           d="M20 38 L38 20 L50 32 L62 20 L80 38 L68 50 L80 62 L62 80 L50 68 L38 80 L20 62 L32 50 Z"
           fill="none"
           strokeWidth="4"
-          stroke={GLOW}
+          stroke={GOLD_MID}
         />
       </svg>
       <Glow />
@@ -201,12 +182,7 @@ const ControllerNode = ({ shape, items, sections, anchor, title, active, setActi
   const isMobile = useIsMobile();
   const open = active === shape;
 
-  const ShapeComp = {
-    triangle: ShapeTriangle,
-    square: ShapeSquare,
-    circle: ShapeCircle,
-    cross: ShapeCross,
-  }[shape];
+  const ShapeComp = { triangle: ShapeTriangle, square: ShapeSquare, circle: ShapeCircle, cross: ShapeCross }[shape];
 
   const panelPos = {
     top: "top-[calc(100%+16px)] left-1/2 -translate-x-1/2",
@@ -215,34 +191,15 @@ const ControllerNode = ({ shape, items, sections, anchor, title, active, setActi
     bottom: "bottom-[calc(100%+16px)] left-1/2 -translate-x-1/2",
   }[anchor];
 
-  // On small screens we want menus to appear centered at the bottom
-  // of the viewport so they remain fully visible.
-  const wrapperPos = isMobile
-    ? "fixed bottom-4 left-1/2 -translate-x-1/2"
-    : `absolute ${panelPos}`;
+  const wrapperPos = isMobile ? "fixed bottom-4 left-1/2 -translate-x-1/2" : `absolute ${panelPos}`;
 
   const handlers = isMobile
-    ? {
-        onClick: (e) => {
-          e.stopPropagation();
-          setActive(open ? null : shape);
-        },
-      }
-    : {
-        onMouseEnter: () => setActive(shape),
-        onMouseLeave: () => setActive(null),
-        onClick: (e) => e.stopPropagation(),
-      };
+    ? { onClick: (e) => { e.stopPropagation(); setActive(open ? null : shape); } }
+    : { onMouseEnter: () => setActive(shape), onMouseLeave: () => setActive(null), onClick: (e) => e.stopPropagation() };
 
   return (
     <div className="group relative flex flex-col items-center justify-center" {...handlers}>
-      <Motion.div
-        whileHover={{ scale: 1.06 }}
-        whileTap={{ scale: 0.98 }}
-        className="cursor-pointer select-none"
-        aria-haspopup="menu"
-        aria-expanded={open}
-      >
+      <Motion.div whileHover={{ scale: 1.06 }} whileTap={{ scale: 0.98 }} className="cursor-pointer select-none" aria-haspopup="menu" aria-expanded={open}>
         <ShapeComp />
       </Motion.div>
 
@@ -257,12 +214,9 @@ const ControllerNode = ({ shape, items, sections, anchor, title, active, setActi
   );
 };
 
-export default function App() {
+export default function App(){
   const [active, setActive] = React.useState(null);
-  const TRI = getGroup("triangle");
-  const SQU = getGroup("square");
-  const CIR = getGroup("circle");
-  const CRO = getGroup("cross");
+  const TRI = getGroup("triangle"), SQU = getGroup("square"), CIR = getGroup("circle"), CRO = getGroup("cross");
 
   React.useEffect(() => {
     const close = () => setActive(null);
@@ -272,19 +226,10 @@ export default function App() {
 
   return (
     <ErrorBoundary>
-      <main
-        className="relative min-h-screen text-emerald-100 bg-black overflow-hidden"
-        onClick={() => setActive(null)}
-      >
-        <div className="pointer-events-none absolute inset-0 opacity-30">
-          <GridDecor />
-        </div>
-
+      <main className="relative min-h-screen text-amber-100 bg-black overflow-hidden" onClick={() => setActive(null)}>
         <header className="relative z-10 flex items-center justify-between px-4 md:px-6 pt-6">
-          <h1 className="font-mono tracking-wider text-xs md:text-sm text-emerald-200/70">
-            ETHPAPERS.XYZ
-          </h1>
-          <div className="text-[10px] font-mono text-emerald-400/60">v0.1</div>
+          <h1 className="font-mono tracking-wider text-xs md:text-sm text-amber-200/80">ETHPAPERS.XYZ</h1>
+          <div className="text-[10px] font-mono text-amber-300/70">v0.1</div>
         </header>
 
         <section className="relative z-10 grid place-items-center pt-6 md:pt-10">
@@ -292,51 +237,19 @@ export default function App() {
             <div className="absolute inset-0 grid grid-cols-3 grid-rows-3">
               <div />
               <div className="flex items-center justify-center">
-                <ControllerNode
-                  shape="triangle"
-                  items={TRI.items}
-                  sections={TRI.sections}
-                  anchor="top"
-                  title={TRI.title}
-                  active={active}
-                  setActive={setActive}
-                />
+                <ControllerNode shape="triangle" items={TRI.items} sections={TRI.sections} anchor="top" title={TRI.title} active={active} setActive={setActive} />
               </div>
               <div />
               <div className="flex items-center justify-center">
-                <ControllerNode
-                  shape="square"
-                  items={SQU.items}
-                  sections={SQU.sections}
-                  anchor="left"
-                  title={SQU.title}
-                  active={active}
-                  setActive={setActive}
-                />
+                <ControllerNode shape="square" items={SQU.items} sections={SQU.sections} anchor="left" title={SQU.title} active={active} setActive={setActive} />
               </div>
               <div />
               <div className="flex items-center justify-center">
-                <ControllerNode
-                  shape="circle"
-                  items={CIR.items}
-                  sections={CIR.sections}
-                  anchor="right"
-                  title={CIR.title}
-                  active={active}
-                  setActive={setActive}
-                />
+                <ControllerNode shape="circle" items={CIR.items} sections={CIR.sections} anchor="right" title={CIR.title} active={active} setActive={setActive} />
               </div>
               <div />
               <div className="flex items-center justify-center">
-                <ControllerNode
-                  shape="cross"
-                  items={CRO.items}
-                  sections={CRO.sections}
-                  anchor="bottom"
-                  title={CRO.title}
-                  active={active}
-                  setActive={setActive}
-                />
+                <ControllerNode shape="cross" items={CRO.items} sections={CRO.sections} anchor="bottom" title={CRO.title} active={active} setActive={setActive} />
               </div>
               <div />
             </div>
@@ -346,32 +259,34 @@ export default function App() {
         <div className="pointer-events-none absolute inset-0 mix-blend-screen opacity-25">
           <Scanlines />
         </div>
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,transparent,rgba(0,0,0,0.7))]" />
 
+        <Distress />
+
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,transparent,rgba(0,0,0,0.8))]" />
       </main>
     </ErrorBoundary>
   );
 }
 
-const GridDecor = () => (
-  <svg className="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
-    <rect x="1" y="1" width="98" height="98" fill="none" stroke="rgba(140,255,200,0.6)" strokeWidth="0.6" />
-    {[25, 50, 75].map((p) => (
-      <g key={p}>
-        <line x1={p} y1="1" x2={p} y2="99" stroke="rgba(140,255,200,0.2)" strokeWidth="0.4" />
-        <line x1="1" y1={p} x2="99" y2={p} stroke="rgba(140,255,200,0.2)" strokeWidth="0.4" />
-      </g>
-    ))}
-  </svg>
-);
-
 const Scanlines = () => (
   <div
     className="absolute inset-0"
     style={{
-      backgroundImage:
-        "repeating-linear-gradient(0deg, rgba(140,255,200,0.12) 0px, rgba(140,255,200,0.12) 1px, rgba(0,0,0,0) 2px)",
+      backgroundImage: "repeating-linear-gradient(0deg, rgba(241,196,83,0.08) 0px, rgba(241,196,83,0.08) 1px, rgba(0,0,0,0) 2px)",
       animation: "scan 8s linear infinite",
     }}
   />
+);
+
+const Distress = () => (
+  <svg className="absolute inset-0 w-full h-full opacity-40 mix-blend-multiply">
+    <filter id="noise">
+      <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" stitchTiles="stitch" />
+      <feColorMatrix type="saturate" values="0" />
+      <feComponentTransfer>
+        <feFuncA type="table" tableValues="0 0.18" />
+      </feComponentTransfer>
+    </filter>
+    <rect width="100%" height="100%" filter="url(#noise)" fill="#000" />
+  </svg>
 );
