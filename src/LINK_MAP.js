@@ -4,7 +4,7 @@ export default {
     items: [{ label: "Mirror.xyz", href: "https://mirror.xyz/ethpapers.eth" }],
   },
   square: {
-    title: "Books",
+    title: "Book",
     items: [
       { label: "IngramSpark", href: "https://ingram.ethpapers.xyz" },
       { label: "Amazon", href: "https://amazon.ethpapers.xyz" },
