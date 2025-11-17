@@ -15,8 +15,8 @@ export default {
     title: "GPTs",
     items: [
       {
-        label: "EthereumGPT",
-        href: "https://chatgpt.com/g/g-k4yMyMJW0-ethereumgpt?model=gpt-5"
+        label: "ethGPT",
+        href: "https://chatgpt.com/g/g-k4yMyMJW0-ethgpt"
       }
     ]
   },
