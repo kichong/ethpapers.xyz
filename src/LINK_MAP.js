@@ -1,7 +1,7 @@
 export default {
   triangle: {
     title: "NFTs",
-    items: [{ label: "Mirror.xyz", href: "https://mirror.xyz/ethpapers.eth" }],
+    items: [{ label: "Ethereum Papers", href: "https://optimistic.etherscan.io/token/0xa6c5050cc9f339b6d276be349d845f75ab5fd6d3" }],
   },
   square: {
     title: "Book",
