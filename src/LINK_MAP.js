@@ -1,7 +1,7 @@
 export default {
   triangle: {
-    title: "NFTs",
-    items: [{ label: "Ethereum Papers", href: "https://optimistic.etherscan.io/token/0xa6c5050cc9f339b6d276be349d845f75ab5fd6d3" }],
+    title: "Read",
+    items: [{ label: "Ethereum Papers", href: "https://paragraph.com/@ethpapers" }],
   },
   square: {
     title: "Book",
@@ -12,11 +12,11 @@ export default {
     ]
   },
   circle: {
-    title: "GPTs",
+    title: "APPS",
     items: [
       {
-        label: "ethGPT",
-        href: "https://chatgpt.com/g/g-k4yMyMJW0-ethgpt"
+        label: "TXT",
+        href: "https://txt.ethpapers.xyz/"
       }
     ]
   },
